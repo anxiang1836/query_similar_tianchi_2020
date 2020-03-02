@@ -1,0 +1,6 @@
+scikit-learn
+tensorflow==2.1.0
+numpy==1.18.1
+gensim==3.8.1
+pandas
+jieba
