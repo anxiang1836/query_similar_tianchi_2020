@@ -1,5 +1,5 @@
 from data_process import category_OneHotEncoder, LoadData
-from model import SimeseCnnModel
+from model import SiameseCnnModel, SiameseRnnModel
 from utils import logger_init
 
 from tensorflow.keras.callbacks import EarlyStopping
@@ -10,7 +10,8 @@ import argparse
 
 # 初始化logging
 logger = logger_init()
-MODEL_TYPE = {"simese_CNN_shared": SimeseCnnModel}
+MODEL_CLASS = {"siamese_CNN": SiameseCnnModel,
+               "siamese_RNN": SiameseRnnModel}
 
 
 def train(args):
@@ -40,11 +41,18 @@ def train(args):
     test_ds = loader.dataset(encoder=category_encoder, data_df=test_data).batch(batch_size=args.batch_size)
 
     # Step2: Load Model
-    model = MODEL_TYPE[args.model_type]
-    model = model(emb_matrix=emd_matrix, word2idx=word2idx, filters_nums=args.filters_nums,
-                  kernel_sizes=args.kernel_sizes, dense_units=args.dense_units, label_count=args.label_count,
-                  category_count=category_count, query_len=args.query_len, shared=args.feature_shared)
-
+    model = None
+    if "CNN" in args.model_type:
+        model = SiameseCnnModel(emb_matrix=emd_matrix, word2idx=word2idx, filters_nums=args.filters_nums,
+                                kernel_sizes=args.kernel_sizes, dense_units=args.dense_units,
+                                label_count=args.label_count, category_count=category_count,
+                                query_len=args.query_len, shared=args.feature_shared)
+    elif "RNN" in args.model_type:
+        model = SiameseRnnModel(emb_matrix=emd_matrix, word2idx=word2idx, hidden_units=args.hidden_units,
+                                dense_units=args.dense_units, label_count=args.label_count,
+                                category_count=category_count, query_len=args.query_len,
+                                mask_zero=args.mask_zero, bidirection=args.bi_direction,
+                                shared=args.feature_shared)
     model_name = model.__class__.__name__
     model = model.get_model()
 
@@ -104,8 +112,15 @@ def train(args):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model_type", type=str, default="simese_CNN_shared",
-                        help="Model type selected in the list: " + ", ".join(MODEL_TYPE.keys()))
+    # Choose Model & Input
+    parser.add_argument("--model_type", type=str, default="siamese_CNN",
+                        help="Model type selected in the list: " + ", ".join(MODEL_CLASS.keys()))
+    parser.add_argument("--feature_shared", type=str, default="True",
+                        help="whether share the feature-struct in simeseNet")
+    parser.add_argument("--query_len", type=int, default=40,
+                        help="how long of each query in origin data")
+
+    # About Path
     parser.add_argument("--w2v_path", type=str, default="./w2v/w2v_word_300.pkl",
                         help="path of w2v")
     parser.add_argument("--train_data_path", type=str, default="./jupyter/shuffle-data/train_data.csv",
@@ -114,32 +129,41 @@ def main():
                         help="")
     parser.add_argument("--test_data_path", type=str, default="./jupyter/shuffle-data/test_data.csv",
                         help="")
-    parser.add_argument("--kernel_sizes", type=str, default='3,4,5',
-                        help="filter sizes to use for convolution")
-    parser.add_argument("--filters_nums", type=str, default="32,64,128",
-                        help="filter nums for convolution")
+    # Dense Layer
     parser.add_argument("--dense_units", type=str, default="256,64,16",
                         help="units in each dense layer")
     parser.add_argument("--label_count", type=int, default=2,
                         help="how many label to predict")
-    parser.add_argument("--query_len", type=int, default=40,
-                        help="how long of each query in origin data")
-    parser.add_argument("--feature_shared", type=str, default="True",
-                        help="whether share the feature-struct in simeseNet")
+    # About Train
     parser.add_argument("--batch_size", type=int, default=128,
                         help="how many samples in each batch")
     parser.add_argument("--epoch", type=int, default=30,
                         help="")
+    # CNN
+    parser.add_argument("--kernel_sizes", type=str, default='3,4,5',
+                        help="filter sizes to use for convolution")
+    parser.add_argument("--filters_nums", type=str, default="32,64,128",
+                        help="filter nums for convolution")
+    # RNN
+    parser.add_argument("--hidden_units", type=str, default='64,64,64',
+                        help="how many units in each step for RNN")
+    parser.add_argument("--mask_zero", type=str, default='True',
+                        help="whether to mask padding in Embedding")
+    parser.add_argument("--bi_direction", type=str, default='True',
+                        help="whether to build bi-direction features")
 
     args = parser.parse_args()
-
+    # CNN
     args.kernel_sizes = [int(size) for size in str(args.kernel_sizes).split(',')]
     args.filters_nums = [int(num) for num in str(args.filters_nums).split(',')]
+    # RNN
+    args.hidden_units = [int(num) for num in str(args.hidden_units).split(',')]
+    # Dense
     args.dense_units = [int(unit) for unit in str(args.dense_units).split(',')]
-    if args.feature_shared == "True":
-        args.feature_shared = True
-    else:
-        args.feature_shared = False
+
+    args.feature_shared = True if args.feature_shared == "True" else False
+    args.mask_zero = True if args.mask_zero == "True" else False
+    args.bi_direction = True if args.bi_direction == "True" else False
 
     train(args)
 

@@ -1,0 +1,15 @@
+python run_train.py \
+  --model_type="siamese_RNN" \
+  --w2v_path='./w2v/w2v_char_300.pkl' \
+  --train_data_path='./jupyter/shuffle-data/train_data.csv' \
+  --dev_data_path='./jupyter/shuffle-data/dev_data.csv' \
+  --test_data_path='./jupyter/shuffle-data/test_data.csv' \
+  --hidden_units='64,64' \
+  --dense_units='256,128,32' \
+  --mask_zero='True' \
+  --bi_direction='True' \
+  --label_count=2 \
+  --query_len=40 \
+  --feature_shared='True' \
+  --batch_size=32 \
+  --epoch=30
