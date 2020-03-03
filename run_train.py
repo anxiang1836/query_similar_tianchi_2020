@@ -1,3 +1,7 @@
+import os
+
+os.environ.setdefault("TF_KERAS", "1")  # 配置bert4keras的keras为tf.keras
+
 from data_process import category_OneHotEncoder
 from data_process.dnn_DataLoader import LoadData
 from data_process.bert_DataLoader import Data_generator
@@ -9,7 +13,8 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 import pandas as pd
 import datetime
 import argparse
-import numpy as np
+
+from bert4keras.backend import set_gelu
 
 # 初始化logging
 logger = logger_init()
@@ -20,6 +25,8 @@ MODEL_CLASS = {"siamese_CNN": SiameseCnnModel,
 
 def train(args):
     if "bert" in args.model_type:
+        set_gelu("tanh")  # 切换gelu版本
+
         # Step1: Load Data
         train_ds = Data_generator(data_path=args.train_data_path, batch_size=args.batch_size, maxlen=args.query_len,
                                   dict_path=args.bert_dict_path)
@@ -47,8 +54,8 @@ def train(args):
                 y_pred = model.predict(x_true).argmax(axis=1)
                 y_true = y_true[:, 0]
                 total += len(y_true)
-                right = len(np.argwhere(y_pred == y_true))
-                # right += (y_true == y_pred).sum()
+                # right = len(np.argwhere(y_pred == y_true))
+                right += (y_true == y_pred).sum()
             return right / total
 
         class Evaluator(Callback):
@@ -71,10 +78,13 @@ def train(args):
         logger.info("  Num Epochs = %d", args.epoch)
         model.fit_generator(train_ds.forfit(),
                             steps_per_epoch=len(train_ds),
-                            epochs=20,
+                            epochs=args.epoch,
                             callbacks=[evaluator])
 
         model.load_weights('./checkpoints/best_bert_model.weights')
+        logger.info("***** Test Reslt *****")
+        logger.info("  Model = %s", model_name)
+        logger.info("  Batch Size = %d", args.batch_size)
         logger.info("  Final Test Acc:%05f", evaluate(test_ds))
 
     elif "NN" in args.model_type:
@@ -180,7 +190,7 @@ def train(args):
 def main():
     parser = argparse.ArgumentParser()
     # Choose Model & Input
-    parser.add_argument("--model_type", type=str, default="siamese_CNN",
+    parser.add_argument("--model_type", type=str, default="albert",
                         help="Model type selected in the list: " + ", ".join(MODEL_CLASS.keys()))
     parser.add_argument("--feature_shared", type=str, default="True",
                         help="whether share the feature-struct in simeseNet")
@@ -221,13 +231,13 @@ def main():
                         help="whether to build bi-direction features")
     # Bert
     parser.add_argument("--bert_dict_path", type=str,
-                        default="./bert_pretrained/albert_tiny_google_zh_489k/vocab.txt",
+                        default="./bert_pretrained/albert_tiny_zh_google/vocab.txt",
                         help="")
     parser.add_argument("--bert_config_path", type=str,
-                        default="./bert_pretrained/albert_tiny_google_zh_489k/albert_config.json",
+                        default="./bert_pretrained/albert_tiny_zh_google/albert_config_tiny_g.json",
                         help="")
     parser.add_argument("--bert_checkpoint_path", type=str,
-                        default="./bert_pretrained/albert_tiny_google_zh_489k/bert_model.ckpt",
+                        default="./bert_pretrained/albert_tiny_zh_google/albert_model.ckpt",
                         help="")
     args = parser.parse_args()
 

@@ -1,6 +1,10 @@
 .ipynb_checkpoints/
 */.ipynb_checkpoints/
+bert_pretrained/albert_*/
+tcdata/
 .idea/
+checkpoints/*.weights.*
+model/00-TFIDF-LR.ipynb
 *.log
 *.pyc
 *.pkl

@@ -17,8 +17,9 @@ class Data_generator(DataGenerator):
         D = []
         with open(filename, encoding='utf-8') as f:
             for line in f:
-                _, text1, text2, label = line.strip().split('\t')
-                D.append((text1, text2, int(label)))
+                id, category, text1, text2, label = line.strip().split(',')
+                if category != 'category':
+                    D.append((text1, text2, int(label)))
         return D
 
     def __iter__(self, random=False):
