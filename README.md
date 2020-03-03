@@ -14,17 +14,23 @@
 
 - SiameseCNN
 - SiameseRNN
+- keras4bert
 
 待实现的模型：
 
 - K-nrm
-- keras4bert
+
+待实现功能：
+
+- Siamese中多样化考虑提取特征后的处理
+
+- bert后，Dense前再接入其他特征
 
 ## 项目结构
 
 ```bash
 .
-├── jupyter   # 数据准备的notebook
+├── jupyter       # 数据准备的notebook
 │   ├── EDA.ipynb
 │   ├── origin-data
 │   │   ├── dev.csv
@@ -36,31 +42,35 @@
 ├── data_process  # 数据预处理
 │   ├── __init__.py
 │   └── dnn_DataLoader.py
-├── w2v    # w2v训练notebook      
+├── model         # 训练模型
+│   ├── __init__.py
+│   ├── 00-TFIDF_LR.ipynb
+│   ├── basic_model.py # siamese模型的父类
+│   ├── siamese_cnn.py
+│   ├── siamese_rnn.py
+│   └── bert.py 
+├── utils           # 工具类
+│   ├── __init__.py
+│   └── logConfig.py ## Logging配置
+├── w2v             # w2v训练notebook      
 │   ├── train_w2v.ipynb
 │   ├── w2v_char_300.pkl
 │   └── w2v_word_300.pkl
-├── model  # 训练模型
-│   ├── __init__.py
-│   ├── 00-TFIDF_LR.ipynb
-│   ├── basic_model.py # 模型的父类
-│   ├── siamese_cnn.py
-│   └── siamese_rnn.py
-├── logs          # 用于存储训练过程的Log
+├── logs            # 用于存储训练过程的Log
 │   └── README.md
-├── checkpoints   # 用于存储训练的模型.h5
+├── checkpoints     # 用于存储训练的模型.h5
 │   └── README.md
-├── utils         # 工具类
-│   ├── __init__.py
-│   └── logConfig.py ## Logging配置
+├── bert-pretrained # 用于存储预训练的bert模型
+│   └── README.md
 ├── tcdata
 │   └── test.csv
 ├── requirements.txt
-├── Dockerfile
-├── run.sh  
+├── Dockerfile 
 ├── run_predict.py
+├── run_train.py
+├── run.sh             # 用于生成predict.csv的脚本
 ├── run_siameseCNN.sh  # CNN模型训练脚本
 ├── run_siameseRNN.sh  # RNN模型训练脚本
-└── run_train.py
+└── run_albert.sh      # albert模型训练脚本
 ```
 
