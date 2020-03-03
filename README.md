@@ -10,6 +10,16 @@
 
 作为自己在相似度匹配任务上的入门。从基本的双塔模型到bert的fintune，分步实现文本匹配的各种深度模型。
 
+现已实现的模型：
+
+- SiameseCNN
+- SiameseRNN
+
+待实现的模型：
+
+- K-nrm
+- keras4bert
+
 ## 项目结构
 
 ```bash
@@ -31,12 +41,12 @@
 │   ├── w2v_char_300.pkl
 │   └── w2v_word_300.pkl
 ├── model  # 训练模型
-│   ├── 00-TFIDF_LR.ipynb
 │   ├── __init__.py
-│   ├── simese_cnn.py
-│   └── simese_rnn.py
+│   ├── 00-TFIDF_LR.ipynb
+│   ├── basic_model.py # 模型的父类
+│   ├── siamese_cnn.py
+│   └── siamese_rnn.py
 ├── logs          # 用于存储训练过程的Log
-│   ├── 202003021631.log
 │   └── README.md
 ├── checkpoints   # 用于存储训练的模型.h5
 │   └── README.md
@@ -49,10 +59,8 @@
 ├── Dockerfile
 ├── run.sh  
 ├── run_predict.py
-├── run_simeseCNN.sh
+├── run_siameseCNN.sh  # CNN模型训练脚本
+├── run_siameseRNN.sh  # RNN模型训练脚本
 └── run_train.py
-
-
-
 ```
 

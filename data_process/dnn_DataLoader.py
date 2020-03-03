@@ -29,8 +29,6 @@ class LoadData:
             OneHotEncoder for category in data_df
         :param data_df:
             Origin Data which type is pd.DataFrame with columns :["category,query1,query2,label"]
-        :param batch_size:
-            Sample counts in each Batch for train
 
         :return:
             dataset: [[category,query1,query2],label]
