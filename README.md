@@ -16,9 +16,9 @@
 - SiameseRNN
 - keras4bert
 
-待实现的模型：
+数据扩充部分：
 
-- K-nrm
+根据`IF A=B and A=C THEN B=C`的规则，对正样本做了扩充增强。
 
 待实现功能：
 
@@ -32,16 +32,14 @@
 .
 ├── jupyter       # 数据准备的notebook
 │   ├── EDA.ipynb
-│   ├── origin-data
-│   │   ├── dev.csv
-│   │   └── train.csv
-│   └── shuffle-data
-│       ├── dev_data.csv
-│       ├── test_data.csv
-│       └── train_data.csv
-├── data_process  # 数据预处理
+│   ├── Augmentation.ipynb
+│   ├── origin-data   # 原始数据
+│   ├── shuffle-data  # 预处理并切分后数据
+│   └── augment-data  # 数据增强后数据
+├── data_process  # 数据加载模块
 │   ├── __init__.py
-│   └── dnn_DataLoader.py
+│   ├── dnn_DataLoader.py
+│   └── bert_DataLoader.py
 ├── model         # 训练模型
 │   ├── __init__.py
 │   ├── 00-TFIDF_LR.ipynb
@@ -54,23 +52,22 @@
 │   └── logConfig.py ## Logging配置
 ├── w2v             # w2v训练notebook      
 │   ├── train_w2v.ipynb
-│   ├── w2v_char_300.pkl
-│   └── w2v_word_300.pkl
+│   └── ...
 ├── logs            # 用于存储训练过程的Log
-│   └── README.md
+│   └── ...
 ├── checkpoints     # 用于存储训练的模型.h5
-│   └── README.md
+│   └── ...
 ├── bert-pretrained # 用于存储预训练的bert模型
-│   └── README.md
-├── tcdata
-│   └── test.csv
+│   └── ...
 ├── requirements.txt
 ├── Dockerfile 
 ├── run_predict.py
 ├── run_train.py
-├── run.sh             # 用于生成predict.csv的脚本
-├── run_siameseCNN.sh  # CNN模型训练脚本
-├── run_siameseRNN.sh  # RNN模型训练脚本
-└── run_albert.sh      # albert模型训练脚本
+├── run.sh
+├── run_albert.sh
+├── run_siameseCNN.sh
+├── run_siameseRNN.sh
+├── run_siameseCNN-augment.sh
+└── run_siameseRNN-augment.sh
 ```
 
