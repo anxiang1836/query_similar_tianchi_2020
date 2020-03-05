@@ -169,6 +169,7 @@ def train(args):
 
         logger.info("***** Pramaters *****")
         logger.info("  SavedModelPath = %s", path)
+        logger.info("  ModelName = %s", args.model_type)
         logger.info("  BatchSize = %d", args.batch_size)
 
         if "CNN" in args.model_type:
