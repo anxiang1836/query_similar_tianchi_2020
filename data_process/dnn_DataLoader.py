@@ -39,14 +39,6 @@ class LoadData:
         query1 = self.trans2idx(query1)
         query2 = self.trans2idx(query2)
 
-        # tensor_label = tf.convert_to_tensor(label)
-        # tensor_category = tf.convert_to_tensor(category)
-        # tensor_query1 = tf.convert_to_tensor(query1)
-        # tensor_query2 = tf.convert_to_tensor(query2)
-        #
-        # X = [tensor_category, tensor_query1, tensor_query2]
-        # y = tensor_label
-
         input_ds = tf.data.Dataset.from_tensor_slices((category, query1, query2))
         output_ds = tf.data.Dataset.from_tensor_slices(label)
 
