@@ -3,7 +3,7 @@ from bert4keras.tokenizer import Tokenizer
 import numpy as np
 
 
-class Data_generator(DataGenerator):
+class BertDataGenerator(DataGenerator):
     """数据生成器
     """
 
@@ -19,6 +19,7 @@ class Data_generator(DataGenerator):
             for line in f:
                 category, text1, text2, label = line.strip().split(',')
                 if category != 'category':
+                    # 过滤掉columns数据行
                     D.append((text1, text2, int(label)))
         return D
 
@@ -29,7 +30,9 @@ class Data_generator(DataGenerator):
         batch_token_ids, batch_segment_ids, batch_labels = [], [], []
         for i in idxs:
             text1, text2, label = self.data[i]
-            token_ids, segment_ids = self._tokenizer.encode(text1, text2, max_length=self._maxlen)
+            token_ids, segment_ids = self._tokenizer.encode(text1, text2,
+                                                            first_length=self._maxlen,
+                                                            second_length=self._maxlen)
             batch_token_ids.append(token_ids)
             batch_segment_ids.append(segment_ids)
             batch_labels.append([label])
