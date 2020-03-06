@@ -6,10 +6,11 @@ from data_process import category_OneHotEncoder
 from data_process.dnn_DataLoader import LoadData
 from data_process.bert_DataLoader import Data_generator
 from model import SiameseCnnModel, SiameseRnnModel, BertModel
-from utils import logger_init
+from utils import logger_init, Evaluator, cal_acc
 
-from tensorflow.keras.callbacks import EarlyStopping, Callback
+from tensorflow.keras.callbacks import EarlyStopping
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+from tensorflow.keras.models import load_model
 import pandas as pd
 import datetime
 import argparse
@@ -48,31 +49,7 @@ def train(args):
             metrics=['accuracy'],
         )
 
-        def evaluate(data):
-            total, right = 0., 0.
-            for x_true, y_true in data:
-                y_pred = model.predict(x_true).argmax(axis=1)
-                y_true = y_true[:, 0]
-                total += len(y_true)
-                # right = len(np.argwhere(y_pred == y_true))
-                right += (y_true == y_pred).sum()
-            return right / total
-
-        class Evaluator(Callback):
-            def __init__(self):
-                super().__init__()
-                self.best_val_acc = 0.
-
-            def on_epoch_end(self, epoch, logs=None):
-                val_acc = evaluate(dev_ds)
-                if val_acc > self.best_val_acc:
-                    self.best_val_acc = val_acc
-                    model.save_weights('./checkpoints/best_bert_model.weights')
-                test_acc = evaluate(test_ds)
-                print(u'val_acc: %.5f, best_val_acc: %.5f, test_acc: %.5f\n'
-                      % (val_acc, self.best_val_acc, test_acc))
-
-        evaluator = Evaluator()
+        evaluator = Evaluator(dev_ds=dev_ds, model_name=model_name, is_bert_model=True)
         logger.info("***** Running training *****")
         logger.info("  Model Class Name = %s", model_name)
         logger.info("  Num Epochs = %d", args.epoch)
@@ -81,11 +58,11 @@ def train(args):
                             epochs=args.epoch,
                             callbacks=[evaluator])
 
-        model.load_weights('./checkpoints/best_bert_model.weights')
+        model = model.load('./checkpoints/best_{}.h5'.format(model_name))
         logger.info("***** Test Reslt *****")
         logger.info("  Model = %s", model_name)
         logger.info("  Batch Size = %d", args.batch_size)
-        logger.info("  Final Test Acc:%05f", evaluate(test_ds))
+        logger.info("  Final Test Acc:%05f", cal_acc(data=test_ds, model=model))
 
     elif "NN" in args.model_type:
         # Step 1 : Loda Data
@@ -120,13 +97,14 @@ def train(args):
             model = SiameseCnnModel(emb_matrix=emd_matrix, word2idx=word2idx, filters_nums=args.filters_nums,
                                     kernel_sizes=args.kernel_sizes, dense_units=args.dense_units,
                                     label_count=args.label_count, category_count=category_count,
-                                    query_len=args.query_len, shared=args.feature_shared)
+                                    query_len=args.query_len, shared=args.feature_shared,
+                                    add_feature=args.add_features)
         elif "RNN" in args.model_type:
             model = SiameseRnnModel(emb_matrix=emd_matrix, word2idx=word2idx, hidden_units=args.hidden_units,
                                     dense_units=args.dense_units, label_count=args.label_count,
                                     category_count=category_count, query_len=args.query_len,
                                     mask_zero=args.mask_zero, bidirection=args.bi_direction,
-                                    shared=args.feature_shared)
+                                    shared=args.feature_shared, add_feature=args.add_features)
         model_name = model.__class__.__name__
         model = model.get_model()
 
@@ -137,9 +115,10 @@ def train(args):
 
         model.compile(optimizer='adam', loss="binary_crossentropy", metrics=["acc"])
         early_stopping = EarlyStopping(monitor="val_acc", patience=3, mode="max")
+        evaluator = Evaluator(dev_ds=dev_ds, model_name=model_name, is_bert_model=False, dev_label=dev_data['label'])
 
         # Step3: Train Model
-        history = model.fit(train_ds, callbacks=[early_stopping], epochs=args.epoch,
+        history = model.fit(train_ds, callbacks=[early_stopping, evaluator], epochs=args.epoch,
                             steps_per_epoch=len(train_data) // args.batch_size,
                             validation_data=dev_ds, validation_steps=len(dev_data) // args.batch_size)
 
@@ -151,11 +130,12 @@ def train(args):
             logger.info("train_loss:%f train_acc:%f val_loss:%f val_acc:%f",
                         history.history.get("loss")[epoch], history.history.get("acc")[epoch],
                         history.history.get("val_loss")[epoch], history.history.get("val_acc")[epoch])
+        #
+        # time_stamp = datetime.datetime.now().strftime('%m-%d_%H-%M-%S')
+        # path = './checkpoints/{}_{}.h5'.format(model_name, time_stamp)
+        # model.save(path)
 
-        time_stamp = datetime.datetime.now().strftime('%m-%d_%H-%M-%S')
-        path = './checkpoints/{}_{}.h5'.format(model_name, time_stamp)
-        model.save(path)
-
+        model = load_model('./checkpoints/best_{}.h5'.format(model_name))
         y_pred = model.predict(test_ds)
         y_true = test_data["label"].values.reshape((-1, 1))
 
@@ -168,8 +148,9 @@ def train(args):
         f1 = f1_score(y_true, y_pred)
 
         logger.info("***** Pramaters *****")
-        logger.info("  SavedModelPath = %s", path)
         logger.info("  ModelName = %s", args.model_type)
+        logger.info("  Add Features = %s", args.add_features)
+        logger.info("  Embedding dims = %d", len(emd_matrix[0]))
         logger.info("  BatchSize = %d", args.batch_size)
 
         if "CNN" in args.model_type:
@@ -191,7 +172,7 @@ def train(args):
 def main():
     parser = argparse.ArgumentParser()
     # Choose Model & Input
-    parser.add_argument("--model_type", type=str, default="albert",
+    parser.add_argument("--model_type", type=str, default="siamese_CNN",
                         help="Model type selected in the list: " + ", ".join(MODEL_CLASS.keys()))
     parser.add_argument("--feature_shared", type=str, default="True",
                         help="whether share the feature-struct in simeseNet")
@@ -218,6 +199,9 @@ def main():
                         help="how many samples in each batch")
     parser.add_argument("--epoch", type=int, default=30,
                         help="")
+    # NN-features
+    parser.add_argument("--add_features", type=str, default='True',
+                        help="whether to add features for NN")
     # CNN
     parser.add_argument("--kernel_sizes", type=str, default='3,4,5',
                         help="filter sizes to use for convolution")
@@ -248,6 +232,7 @@ def main():
     # RNN
     args.hidden_units = [int(num) for num in str(args.hidden_units).split(',')]
     # Dense
+    args.add_features = True if args.add_features == "True" else False
     args.dense_units = [int(unit) for unit in str(args.dense_units).split(',')]
 
     args.feature_shared = True if args.feature_shared == "True" else False
