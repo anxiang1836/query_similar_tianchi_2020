@@ -8,7 +8,7 @@ from model import BasicModel
 class SiameseRnnModel(BasicModel):
     def __init__(self, emb_matrix: np.ndarray, word2idx: np.ndarray, hidden_units: List[int], dense_units: List[int],
                  label_count: int, category_count: int, query_len: int, mask_zero: bool = True,
-                 bidirection: bool = True, shared: bool = True):
+                 bidirection: bool = True, shared: bool = True, add_feature=True):
         """
         初始化模型参数
 
@@ -22,8 +22,9 @@ class SiameseRnnModel(BasicModel):
         :param mask_zero     : bool 是否在Embedding层对zero进行Mask处理
         :param bidirection   : bool 每层是否为双向rnn，默认为True
         :param shared        : bool 双塔是否共享特征提取的CNN权重
+        :param add_feature    : bool 是否增加额外特征
         """
-        super().__init__(emb_matrix, word2idx, dense_units, label_count, category_count, query_len, shared)
+        super().__init__(emb_matrix, word2idx, dense_units, label_count, category_count, query_len, shared, add_feature)
         self.hidden_units = hidden_units
         self.mask_zero = mask_zero
         self.bidirection = bidirection

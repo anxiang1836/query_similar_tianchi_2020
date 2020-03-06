@@ -8,7 +8,8 @@ from model import BasicModel
 
 class SiameseCnnModel(BasicModel):
     def __init__(self, emb_matrix: np.ndarray, word2idx: np.ndarray, filters_nums: List[int], kernel_sizes: List[int],
-                 dense_units: List[int], label_count: int, category_count: int, query_len: int, shared: bool = True):
+                 dense_units: List[int], label_count: int, category_count: int, query_len: int, shared: bool = True,
+                 add_feature: bool = True):
         """
         初始化模型参数
 
@@ -21,8 +22,9 @@ class SiameseCnnModel(BasicModel):
         :param category_count: int 原始数据中query类型数量
         :param query_len     : int 原始数据中query的最大长度
         :param shared        : 双塔是否共享特征提取的CNN权重
+        :param add_feature    : bool 是否增加额外特征
         """
-        super().__init__(emb_matrix, word2idx, dense_units, label_count, category_count, query_len, shared)
+        super().__init__(emb_matrix, word2idx, dense_units, label_count, category_count, query_len, shared, add_feature)
 
         if len(filters_nums) == len(kernel_sizes):
             self.filters_nums = filters_nums

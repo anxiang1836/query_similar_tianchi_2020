@@ -2,12 +2,13 @@ import abc
 import numpy as np
 from typing import List
 from tensorflow.keras import Input, Model, Sequential
-from tensorflow.keras.layers import Concatenate, Dense
+from tensorflow.keras.layers import Concatenate, Dense, subtract, multiply, maximum
+import tensorflow as tf
 
 
 class BasicModel:
     def __init__(self, emb_matrix: np.ndarray, word2idx: np.ndarray, dense_units: List[int],
-                 label_count: int, category_count: int, query_len: int, shared: bool = True):
+                 label_count: int, category_count: int, query_len: int, shared: bool = True, add_feature=True):
         """
         :param emb_matrix     : embedding矩阵
         :param word2idx       : word转idx的矩阵
@@ -16,6 +17,7 @@ class BasicModel:
         :param category_count : int 原始数据中query类型数量
         :param query_len      : int 原始数据中query的最大长度
         :param shared         : bool 双塔是否共享特征提取的CNN权重
+        :param add_feature    : bool 是否增加额外特征
         """
         self.emb_matrix = emb_matrix
         self.word2idx = word2idx
@@ -24,6 +26,7 @@ class BasicModel:
         self.category_count = category_count
         self.query_len = query_len
         self.shared = shared
+        self.add_feature = add_feature
 
     @abc.abstractmethod
     def build_feature(self) -> Sequential:
@@ -47,12 +50,23 @@ class BasicModel:
 
             query_1 = model(input_query1)
             query_2 = model(input_query2)
-            merge_layers = Concatenate()([query_1, query_2, input_category])
 
         else:
             # 调用了2次Model,是双塔非共享模型
             query_1 = self.build_feature()(input_query1)
             query_2 = self.build_feature()(input_query2)
+
+        if self.add_feature:
+            # |q1-q2| 两特征之差的绝对值
+            sub = subtract([query_1, query_2])
+            sub = tf.abs(sub)
+            # q1*q2 两特征按元素相乘
+            mul = multiply([query_1, query_2])
+            # max(q1,q2)^2 两特征取最大元素的平方
+            max_square = multiply([maximum([query_1, query_2]), maximum([query_1, query_2])])
+
+            merge_layers = Concatenate()([query_1, query_2, sub, mul, max_square, input_category])
+        else:
             merge_layers = Concatenate()([query_1, query_2, input_category])
 
         # Layer2：全连接层
