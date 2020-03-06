@@ -1,4 +1,5 @@
-from data_process import LoadData, category_OneHotEncoder
+from data_process import category_OneHotEncoder
+from data_process.dnn_DataLoader import LoadData
 import pandas as pd
 import numpy as np
 import argparse
