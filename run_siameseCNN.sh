@@ -1,8 +1,9 @@
 python run_train.py \
   --model_type="siamese_CNN" \
-  --w2v_path='./w2v/w2v_char_300.pkl' \
-  --train_data_path='./jupyter/shuffle-data/train_data.csv' \
-  --dev_data_path='./jupyter/shuffle-data/dev_data.csv' \
+  --add_features='True' \
+  --w2v_path='./w2v/w2v_char_100.pkl' \
+  --train_data_path='./jupyter/augment-data/train_data.csv' \
+  --dev_data_path='./jupyter/augment-data/dev_data.csv' \
   --test_data_path='./jupyter/shuffle-data/test_data.csv' \
   --kernel_sizes='3,4,5' \
   --filters_nums='32,64,128' \
