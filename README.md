@@ -10,21 +10,28 @@
 
 作为自己在相似度匹配任务上的入门。从基本的双塔模型到bert的fintune，分步实现文本匹配的各种深度模型。
 
-现已实现的模型：
+### 实现模型
 
 - SiameseCNN
 - SiameseRNN
-- keras4bert
+- albert(bert4keras)[sentence pairs]
+- SiameseBert
 
-数据扩充部分：
+### 数据增强
 
 根据`IF A=B and A=C THEN B=C`的规则，对正样本做了扩充增强。
 
-待实现功能：
+### 特征工程
 
-- Siamese中多样化考虑提取特征后的处理
+在SiameseNN中，构建了5种特征（即考虑多种距离测量的方式）：
 
-- bert后，Dense前再接入其他特征
+- query1，query2
+- |query1 - query2|
+- query1 \* query2
+- max(query1,query2)^2
+- category（OneHot表示）
+
+### 模型结果（带补充）
 
 ## 项目结构
 
@@ -49,6 +56,7 @@
 │   └── bert.py 
 ├── utils           # 工具类
 │   ├── __init__.py
+│   ├── evaluate.py
 │   └── logConfig.py ## Logging配置
 ├── w2v             # w2v训练notebook      
 │   ├── train_w2v.ipynb
@@ -66,8 +74,6 @@
 ├── run.sh
 ├── run_albert.sh
 ├── run_siameseCNN.sh
-├── run_siameseRNN.sh
-├── run_siameseCNN-augment.sh
-└── run_siameseRNN-augment.sh
+└── run_siameseRNN.sh
 ```
 
