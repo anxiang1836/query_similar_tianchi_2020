@@ -4,23 +4,25 @@ os.environ.setdefault("TF_KERAS", "1")  # 配置bert4keras的keras为tf.keras
 
 from data_process import category_OneHotEncoder
 from data_process.dnn_DataLoader import LoadData
-from data_process.bert_DataLoader import Data_generator
-from model import SiameseCnnModel, SiameseRnnModel, BertModel
+from data_process.bert_DataLoader import BertDataGenerator
+from data_process.siamesebert_DataLoader import SiameseDataGenerator
+from model import SiameseCnnModel, SiameseRnnModel, SiameseBertModel, BertModel
 from utils import logger_init, Evaluator, cal_acc
 
-from tensorflow.keras.callbacks import EarlyStopping
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
-from tensorflow.keras.models import load_model
+from tensorflow.keras.callbacks import EarlyStopping
+from tensorflow.keras.models import load_model, Model
 import pandas as pd
-import datetime
 import argparse
 
 from bert4keras.backend import set_gelu
 
 # 初始化logging
 logger = logger_init()
+
 MODEL_CLASS = {"siamese_CNN": SiameseCnnModel,
                "siamese_RNN": SiameseRnnModel,
+               "siamese_bert": SiameseBertModel,
                "albert": BertModel}
 
 
@@ -29,15 +31,27 @@ def train(args):
         set_gelu("tanh")  # 切换gelu版本
 
         # Step1: Load Data
-        train_ds = Data_generator(data_path=args.train_data_path, batch_size=args.batch_size, maxlen=args.query_len,
-                                  dict_path=args.bert_dict_path)
-        dev_ds = Data_generator(data_path=args.dev_data_path, batch_size=args.batch_size, maxlen=args.query_len,
-                                dict_path=args.bert_dict_path)
-        test_ds = Data_generator(data_path=args.test_data_path, batch_size=args.batch_size, maxlen=args.query_len,
-                                 dict_path=args.bert_dict_path)
+        data_generator = None
+        if "siamese" in args.model_type:
+            data_generator = BertDataGenerator
+        elif "albert" in args.model_type:
+            data_generator = SiameseDataGenerator
+
+        train_ds = data_generator(data_path=args.train_data_path, batch_size=args.batch_size,
+                                  dict_path=args.bert_dict_path, maxlen=args.query_len)
+        dev_ds = data_generator(data_path=args.dev_data_path, batch_size=args.batch_size,
+                                maxlen=args.query_len, dict_path=args.bert_dict_path)
+        test_ds = data_generator(data_path=args.test_data_path, batch_size=args.batch_size,
+                                 maxlen=args.query_len, dict_path=args.bert_dict_path)
 
         # Step2: Load Model
-        model = BertModel(config_path=args.bert_config_path, checkpoint_path=args.bert_checkpoint_path)
+        model = None
+        if "siamese" in args.model_type:
+            model = SiameseBertModel(config_path=args.bert_config_path, checkpoint_path=args.bert_checkpoint_path,
+                                     dense_units=args.dense_units)
+        elif "albert" in args.model_type:
+            model = BertModel(config_path=args.bert_config_path, checkpoint_path=args.bert_checkpoint_path)
+
         model_name = model.__class__.__name__
         model = model.get_model()
 
@@ -58,11 +72,11 @@ def train(args):
                             epochs=args.epoch,
                             callbacks=[evaluator])
 
-        model = model.load('./checkpoints/best_{}.h5'.format(model_name))
+        model = load_model('./checkpoints/best_{}.h5'.format(model_name))
         logger.info("***** Test Reslt *****")
         logger.info("  Model = %s", model_name)
         logger.info("  Batch Size = %d", args.batch_size)
-        logger.info("  Final Test Acc:%05f", cal_acc(data=test_ds, model=model))
+        logger.info("  Final Test Acc:%05f", cal_acc(data=test_ds, model=model, is_bert_model=True))
 
     elif "NN" in args.model_type:
         # Step 1 : Loda Data
@@ -93,13 +107,13 @@ def train(args):
 
         # Step2: Load Model
         model = None
-        if "CNN" in args.model_type:
+        if "siamese_CNN" in args.model_type:
             model = SiameseCnnModel(emb_matrix=emd_matrix, word2idx=word2idx, filters_nums=args.filters_nums,
                                     kernel_sizes=args.kernel_sizes, dense_units=args.dense_units,
                                     label_count=args.label_count, category_count=category_count,
                                     query_len=args.query_len, shared=args.feature_shared,
                                     add_feature=args.add_features)
-        elif "RNN" in args.model_type:
+        elif "siamese_RNN" in args.model_type:
             model = SiameseRnnModel(emb_matrix=emd_matrix, word2idx=word2idx, hidden_units=args.hidden_units,
                                     dense_units=args.dense_units, label_count=args.label_count,
                                     category_count=category_count, query_len=args.query_len,
