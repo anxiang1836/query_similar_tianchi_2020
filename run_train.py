@@ -33,9 +33,9 @@ def train(args):
         # Step1: Load Data
         data_generator = None
         if "siamese" in args.model_type:
-            data_generator = BertDataGenerator
-        elif "albert" in args.model_type:
             data_generator = SiameseDataGenerator
+        elif "albert" in args.model_type:
+            data_generator = BertDataGenerator
 
         train_ds = data_generator(data_path=args.train_data_path, batch_size=args.batch_size,
                                   dict_path=args.bert_dict_path, maxlen=args.query_len)
@@ -63,16 +63,17 @@ def train(args):
             metrics=['accuracy'],
         )
 
-        evaluator = Evaluator(dev_ds=dev_ds, model_name=model_name, is_bert_model=True)
+        evaluator = Evaluator(dev_ds=dev_ds, model_name=model_name, is_bert_model=True,test_ds=test_ds)
         logger.info("***** Running training *****")
         logger.info("  Model Class Name = %s", model_name)
         logger.info("  Num Epochs = %d", args.epoch)
         model.fit_generator(train_ds.forfit(),
                             steps_per_epoch=len(train_ds),
                             epochs=args.epoch,
-                            callbacks=[evaluator])
+                            callbacks=[evaluator],
+                            verbose=2)
 
-        model = load_model('./checkpoints/best_{}.h5'.format(model_name))
+        model.load_weights('./checkpoints/best_{}.weight'.format(model_name))
         logger.info("***** Test Reslt *****")
         logger.info("  Model = %s", model_name)
         logger.info("  Batch Size = %d", args.batch_size)
@@ -186,7 +187,7 @@ def train(args):
 def main():
     parser = argparse.ArgumentParser()
     # Choose Model & Input
-    parser.add_argument("--model_type", type=str, default="siamese_CNN",
+    parser.add_argument("--model_type", type=str, default="albert",
                         help="Model type selected in the list: " + ", ".join(MODEL_CLASS.keys()))
     parser.add_argument("--feature_shared", type=str, default="True",
                         help="whether share the feature-struct in simeseNet")
@@ -209,9 +210,9 @@ def main():
     parser.add_argument("--label_count", type=int, default=2,
                         help="how many label to predict")
     # About Train
-    parser.add_argument("--batch_size", type=int, default=128,
+    parser.add_argument("--batch_size", type=int, default=32,
                         help="how many samples in each batch")
-    parser.add_argument("--epoch", type=int, default=30,
+    parser.add_argument("--epoch", type=int, default=15,
                         help="")
     # NN-features
     parser.add_argument("--add_features", type=str, default='True',

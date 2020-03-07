@@ -19,21 +19,28 @@ class SiameseBertModel:
 
     def get_model(self):
         # 加载预训练模型
-        q1_token_in = Input(shape=(None,))
-        q1_seg_in = Input(shape=(None,))
-        q2_token_in = Input(shape=(None,))
-        q2_seg_in = Input(shape=(None,))
-
         bert = build_bert_model(
             config_path=self.config_path, checkpoint_path=self.checkpoint_path,
             with_pool=True, return_keras_model=False, model="albert")
 
-        query1 = bert.model()([q1_token_in, q1_seg_in])
-        query2 = bert.model()([q2_token_in, q2_seg_in])
+        # query1 = bert.model()([q1_token_in, q1_seg_in])
+        # query2 = bert.model()([q2_token_in, q2_seg_in])
+
+        q1_x_in = Input(shape=(None, ), name='Input-Token-q1')
+        q2_x_in = Input(shape=(None,), name='Input-Token-q2')
+        q1_s_in = Input(shape=(None,), name='Input-Segment-q1')
+        q2_s_in = Input(shape=(None,), name='Input-Segment-q2')
+
+
+
+        input_layer = bert.model.input
+        input_layer.extend(bert.model.input)
+
+        query1 = Dropout(rate=0.1)(bert.model.output)
+        query2 = Dropout(rate=0.1)(bert.model.output)
 
         # |q1-q2| 两特征之差的绝对值
-        sub = subtract([query1, query2])
-        sub = tf.abs(sub)
+        sub = tf.abs(subtract([query1, query2]))
         # q1*q2 两特征按元素相乘
         mul = multiply([query1, query2])
         # max(q1,q2)^2 两特征取最大元素的平方
@@ -52,6 +59,6 @@ class SiameseBertModel:
             else:
                 fc = Dense(self.dense_units[i], activation="relu", kernel_initializer=bert.initializer)(fc)
 
-        model = Model(inputs=[q1_token_in, q1_seg_in, q2_token_in, q2_seg_in], outputs=[fc])
+        model = Model(input_layer, fc)
         model.summary()
         return model

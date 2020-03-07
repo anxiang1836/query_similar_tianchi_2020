@@ -7,4 +7,5 @@ python run_train.py \
   --bert_config_path='./bert_pretrained/albert_tiny_google_zh_489k/albert_config.json'
   --bert_checkpoint_path="./bert_pretrained/albert_tiny_google_zh_489k/bert_model.ckpt"
   --batch_size=8 \
-  --epoch=20
+  --epoch=20 \
+  --query_len=40

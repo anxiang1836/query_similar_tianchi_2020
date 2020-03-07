@@ -8,13 +8,14 @@ class Evaluator(Callback):
     用于判定并保存val-acc最好的一组参数，
     """
 
-    def __init__(self, dev_ds, model_name, is_bert_model, dev_label=None):
+    def __init__(self, dev_ds, model_name, is_bert_model, dev_label=None, test_ds=None):
         super().__init__()
         self.best_val_acc = 0.
         self._dev_ds = dev_ds
         self._model_name = model_name
         self.is_bert_model = is_bert_model
         self._dev_label = dev_label
+        self._test_ds = test_ds
 
     def on_epoch_end(self, epoch, logs=None):
         val_acc = cal_acc(data=self._dev_ds, model=self.model, is_bert_model=self.is_bert_model,
@@ -22,10 +23,12 @@ class Evaluator(Callback):
         if val_acc > self.best_val_acc:
             self.best_val_acc = val_acc
             # time_stamp = datetime.datetime.now().strftime('%m-%d_%H-%M-%S')
-            self.model.save('./checkpoints/best_{}.h5'.format(self._model_name))
-        # test_acc = cal_acc(self._test_ds, self.model)
-        # print(u'val_acc: %.5f, best_val_acc: %.5f, test_acc: %.5f\n'
-        #       % (val_acc, self.best_val_acc, test_acc))
+            if self.is_bert_model:
+                self.model.save_weights('./checkpoints/best_{}.weight'.format(self._model_name))
+        if self._test_ds is not None:
+            test_acc = cal_acc(self._test_ds, self.model)
+            print(u'val_acc: %.5f, best_val_acc: %.5f, test_acc: %.5f\n'
+                  % (val_acc, self.best_val_acc, test_acc))
 
 
 def cal_acc(data, model, is_bert_model=True, label=None):

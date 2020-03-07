@@ -31,8 +31,7 @@ class BertDataGenerator(DataGenerator):
         for i in idxs:
             text1, text2, label = self.data[i]
             token_ids, segment_ids = self._tokenizer.encode(text1, text2,
-                                                            first_length=self._maxlen,
-                                                            second_length=self._maxlen)
+                                                            max_length=2 * self._maxlen)
             batch_token_ids.append(token_ids)
             batch_segment_ids.append(segment_ids)
             batch_labels.append([label])
